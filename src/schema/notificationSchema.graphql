@@ -1,0 +1,25 @@
+type Notification {
+  id: ID!
+  userId: ID!
+  recipient: String!
+  type: String!
+  message: String!
+  status: String!
+  retryCount: Int!
+  createdAt: String!
+  updatedAt: String!
+}
+
+input CreateNotificationInput {
+  recipient: String!
+  message: String!
+  type: String = "EMAIL"
+}
+
+type Mutation {
+  createNotification(input: CreateNotificationInput!): Notification!
+}
+
+type Query {
+  getNotifications: [Notification!]!
+}
