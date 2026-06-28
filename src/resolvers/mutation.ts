@@ -2,7 +2,13 @@ import type { MutationResolvers } from "../generated/graphql";
 import { createNotificationService } from "../services/notification.service";
 
 export const mutationResolvers: MutationResolvers = {
-  createNotification: async (_parent, args, context) => {
+  createNotification: async (
+    _parent: unknown,
+    args: {
+      input: { message: string; recipient: string; type?: string | null };
+    },
+    context: { userId?: string | null },
+  ) => {
     if (!context.userId) {
       throw new Error("Unauthorized");
     }

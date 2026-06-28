@@ -1,5 +1,7 @@
-import express from "express";
+import "./polyfills";
 import dotenv from "dotenv";
+dotenv.config();
+import express from "express";
 import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
 import { readFileSync } from "fs";
@@ -7,8 +9,9 @@ import jwt from "jsonwebtoken";
 import authRouter from "./routes/auth";
 import { client, connectDb } from "./db";
 import { resolvers } from "./resolvers";
-
-dotenv.config();
+import { connectProducer } from "./kafka/producer";
+import { startConsumer } from "./kafka/consumer";
+import { createTopic } from "./kafka/admin";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -61,6 +64,10 @@ async function start() {
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
+
+    await createTopic();
+    await connectProducer();
+    await startConsumer();
 
     app.listen(port, () => {
       console.log(`Server listening on http://localhost:${port}`);

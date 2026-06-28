@@ -1,8 +1,13 @@
 import type { QueryResolvers } from "../generated/graphql";
-const { getNotificationsService } = await import("../services/notification.service");
+const { getNotificationsService } =
+  await import("../services/notification.service");
 
 export const queryResolvers: QueryResolvers = {
-  getNotifications: async (_parent, _args, { userId }) => {
+  getNotifications: async (
+    _parent: unknown,
+    _args: unknown,
+    { userId }: { userId?: string | null },
+  ) => {
     if (!userId) {
       throw new Error("Unauthorized");
     }
@@ -15,7 +20,9 @@ export const queryResolvers: QueryResolvers = {
       message: notification.message,
       type: notification.type,
       status: notification.status,
-      createdAt: notification.createdAt,
+      retryCount: notification.retryCount ?? 0,
+      createdAt: notification.createdAt?.toISOString() ?? "",
+      updatedAt: notification.updatedAt?.toISOString() ?? "",
     }));
-  }
+  },
 };
