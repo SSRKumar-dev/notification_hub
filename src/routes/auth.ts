@@ -3,6 +3,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { connectDb, getUsersCollection } from "../db";
 import { protect, type AuthRequest } from "../middleware/auth.middleware";
+import {
+  sendSecurityAlertEmail,
+  sendWelcomeEmail,
+} from "../services/email.service";
 
 const router = Router();
 
@@ -50,6 +54,15 @@ router.post("/signup", async (req, res) => {
 
     const token = createToken(result.insertedId.toString(), email);
 
+    sendWelcomeEmail({
+      name,
+      recipient: email,
+      signupTime: new Date().toLocaleString(),
+      frontendUrl: process.env.FRONTEND_URL || "https://notificationhub.local",
+    }).catch((error) => {
+      console.error("Failed to send signup welcome email:", error);
+    });
+
     return res.status(201).json({
       message: "User registered successfully",
       token,
@@ -93,6 +106,24 @@ router.post("/login", async (req, res) => {
 
     const token = createToken(String(user._id), String(user.email));
 
+    const userAgent = String(req.headers["user-agent"] ?? "Unknown device");
+    const forwardedFor = req.headers["x-forwarded-for"];
+    const ipAddress =
+      typeof forwardedFor === "string"
+        ? forwardedFor.split(",")[0].trim()
+        : (req.ip ?? "Unknown IP");
+
+    sendSecurityAlertEmail({
+      name: user.name,
+      recipient: user.email,
+      loginTime: new Date().toLocaleString(),
+      device: userAgent,
+      location: "Unknown location",
+      ipAddress,
+    }).catch((error) => {
+      console.error("Failed to send login alert email:", error);
+    });
+
     return res.status(200).json({
       message: "Login successful",
       token,
@@ -111,6 +142,5 @@ router.post("/login", async (req, res) => {
 router.get("/me", protect, (req: AuthRequest, res) => {
   res.json({ userId: req.userId });
 });
-
 
 export default router;
