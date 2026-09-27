@@ -3,6 +3,13 @@ import Notification, {
   connectNotificationDb,
 } from "../schema/notificationSchema";
 import { sendNotificationEvent } from "../kafka/producer";
+import {
+  calculateNotificationStats,
+  type NotificationStatusSummary,
+} from "./notificationStats";
+
+export type { NotificationStatusSummary };
+export { calculateNotificationStats };
 
 export async function createNotificationService(
   userId: string,
@@ -32,4 +39,10 @@ export async function createNotificationService(
 export async function getNotificationsService(userId: string) {
   await connectNotificationDb();
   return Notification.find({ userId }).sort({ createdAt: -1 });
+}
+
+export async function getNotificationStatsService(userId: string) {
+  await connectNotificationDb();
+  const notifications = await Notification.find({ userId }).lean();
+  return calculateNotificationStats(notifications);
 }
