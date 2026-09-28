@@ -32,6 +32,35 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok" });
 });
 
+app.get("/api/notifications/stats", async (req, res) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const token = authHeader.split(" ")[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+      sub?: string;
+      userId?: string;
+    };
+
+    const userId = decoded.userId || decoded.sub;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { getNotificationStatsService } =
+      await import("./services/notification.service");
+    const stats = await getNotificationStatsService(userId);
+    return res.json(stats);
+  } catch (error) {
+    console.error("Notification stats fetch failed:", error);
+    return res.status(401).json({ message: "Invalid token" });
+  }
+});
+
 async function start() {
   try {
     await server.start();
